@@ -35,7 +35,7 @@
             <option value="">-- Bấm nút trên để tải --</option>
             <option value="NEW">+ Tạo mới Mục (Tag)...</option>
         </select>
-        <input type="text" id="newTag" placeholder="Nhập tên Tag mới (ví dụ: v1.0)" style="display:none; margin-top:10px;">
+        <input type="text" id="newTag" placeholder="Nhập tên Tag mới" style="display:none; margin-top:10px;">
     </div>
 
     <div class="group">
@@ -46,7 +46,7 @@
     <div class="group">
         <label>4. Chọn file IPA & Tên Plist:</label>
         <input type="file" id="ipaFile" accept=".ipa" style="margin-bottom:10px;">
-        <input type="text" id="plistName" placeholder="Tên file lưu (ví dụ: es1)">
+        <input type="text" id="plistName" placeholder="Tên file lưu (không cần .plist)">
     </div>
 
     <button id="btnStart" onclick="execute()">BẮT ĐẦU QUY TRÌNH TỰ ĐỘNG</button>
@@ -77,14 +77,14 @@
     }
 
     async function fetchReleases() {
-        const t = document.getElementById('token').value;
+        const t = document.getElementById('token').value.trim();
         if(!t) return alert("Vui lòng nhập Token!");
         log("Đang kết nối GitHub...");
         try {
             const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/releases`, {
-                headers: { 'Authorization': `Bearer ${t.trim()}` }
+                headers: { 'Authorization': `token ${t}`, 'Accept': 'application/vnd.github.v3+json' }
             });
-            if (!res.ok) throw new Error("Token sai hoặc không có quyền.");
+            if (!res.ok) throw new Error("Token không hợp lệ hoặc không có quyền.");
             const data = await res.json();
             const sel = document.getElementById('tagSelect');
             sel.innerHTML = '<option value="">-- Chọn mục --</option><option value="NEW">+ Tạo mới Mục (Tag)...</option>';
@@ -111,7 +111,7 @@
             // 1. Kiểm tra Release
             log("Kiểm tra Mục (Tag)...");
             let relRes = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/releases/tags/${tag}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }
             });
             
             let relData;
@@ -119,7 +119,7 @@
                 log("Đang tạo Mục mới...");
                 let createRes = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/releases`, {
                     method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({ tag_name: tag, name: `Release ${tag}` })
                 });
                 relData = await createRes.json();
@@ -128,56 +128,60 @@
             }
 
             // 2. Upload IPA
-            log(`Đang upload ${file.name} (vui lòng đợi)...`);
+            log(`Đang đẩy file ${file.name} lên GitHub...`);
             const uploadUrl = `https://uploads.github.com/repos/${OWNER}/${REPO}/releases/${relData.id}/assets?name=${encodeURIComponent(file.name)}`;
             
-            const upRes = await fetch(uploadUrl, {
-                method: 'POST',
-                headers: { 
-                    'Authorization': `Bearer ${token}`, 
-                    'Content-Type': 'application/octet-stream' 
-                },
-                body: file
-            });
+            try {
+                const upRes = await fetch(uploadUrl, {
+                    method: 'POST',
+                    headers: { 
+                        'Authorization': `token ${token}`, 
+                        'Content-Type': 'application/octet-stream' 
+                    },
+                    body: file
+                });
 
-            if(!upRes.ok) {
-                const err = await upRes.json();
-                if(upRes.status === 422) throw new Error("File đã tồn tại trong Mục này. Hãy xóa trên GitHub hoặc đổi tên file.");
-                throw new Error(err.message || "Lỗi upload IPA.");
+                if(!upRes.ok) {
+                    const err = await upRes.json();
+                    if(upRes.status === 422) throw new Error("File đã tồn tại! Hãy xóa file cũ trên GitHub hoặc đổi tên file IPA.");
+                    throw new Error(err.message || "Lỗi upload IPA.");
+                }
+                log("Upload IPA thành công!");
+            } catch (fetchErr) {
+                throw new Error("Failed to fetch: Lỗi này thường do trình duyệt chặn CORS. Bạn hãy cài Extension 'Allow CORS' và bật nó lên, hoặc thử lại trên trình duyệt khác.");
             }
             
             const ipaUrl = `https://github.com/${OWNER}/${REPO}/releases/download/${tag}/${encodeURIComponent(file.name)}`;
-            log("Upload IPA thành công!");
 
             // 3. Tạo Plist
-            log("Đang cấu hình file Plist...");
+            log("Đang tạo file Plist...");
             const plistBody = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict><key>items</key><array><dict><key>assets</key><array><dict><key>kind</key><string>software-package</string><key>url</key><string>${ipaUrl}</string></dict></array><key>metadata</key><dict><key>bundle-identifier</key><string>com.viecert.app</string><key>bundle-version</key><string>1.0</string><key>kind</key><string>software</string><key>title</key><string>${pName}</string></dict></dict></array></dict></plist>`;
 
-            // 4. Lưu Plist (Có xử lý SHA để ghi đè)
+            // 4. Lưu Plist vào repo
             const path = `esignplist/${pName}.plist`;
+            log(`Đang lưu vào ${path}...`);
             let sha = "";
             const checkRes = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${path}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }
             });
             if(checkRes.ok) {
                 const checkData = await checkRes.json();
                 sha = checkData.sha;
-                log("Tìm thấy file Plist cũ, đang cập nhật...");
             }
 
             const commitRes = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${path}`, {
                 method: 'PUT',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    message: `Auto update plist: ${pName}`,
+                    message: `Update plist: ${pName}`,
                     content: btoa(unescape(encodeURIComponent(plistBody))),
                     sha: sha || undefined
                 })
             });
 
-            if(!commitRes.ok) throw new Error("Không thể lưu file Plist lên GitHub.");
+            if(!commitRes.ok) throw new Error("Không thể lưu file Plist.");
             log("Đã lưu Plist thành công.");
 
             // 5. Kết quả
@@ -186,11 +190,10 @@
             
             document.getElementById('itmsLink').innerText = itms;
             document.getElementById('result').style.display = 'block';
-            log("--- TẤT CẢ HOÀN TẤT ---");
+            log("--- HOÀN THÀNH 100% ---");
 
         } catch(e) {
-            log("LỖI: " + e.message, true);
-            console.error(e);
+            log(e.message, true);
         } finally {
             document.getElementById('btnStart').disabled = false;
         }
