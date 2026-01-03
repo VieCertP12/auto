@@ -2,61 +2,50 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>OTA Installer Generator - VieCertP12</title>
+    <title>IPA Uploader Pro - VieCertP12</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; color: #fff; padding: 20px; }
-        .container { max-width: 700px; margin: auto; background: #2d2d2d; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        body { font-family: 'Segoe UI', sans-serif; background: #121212; color: #fff; padding: 20px; }
+        .container { max-width: 600px; margin: auto; background: #1e1e1e; padding: 25px; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.5); }
         h2 { text-align: center; color: #007aff; }
-        .group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; font-weight: bold; color: #bbb; }
-        input, select { width: 100%; padding: 12px; background: #3d3d3d; border: 1px solid #555; border-radius: 8px; color: #fff; box-sizing: border-box; }
-        button { width: 100%; padding: 15px; background: #007aff; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.3s; }
-        button:hover { background: #0056b3; transform: translateY(-2px); }
-        #log { margin-top: 20px; padding: 15px; background: #000; color: #4af626; border-radius: 8px; font-family: monospace; font-size: 13px; height: 180px; overflow-y: auto; border: 1px solid #444; line-height: 1.5; }
-        .result-area { margin-top: 25px; padding: 20px; background: #e8f2ff; color: #333; border-radius: 10px; display: none; border: 2px solid #007aff; }
-        .link-text { word-break: break-all; font-weight: bold; color: #d32f2f; margin: 10px 0; padding: 10px; background: #fff; border-radius: 5px; border: 1px dashed #007aff; font-size: 14px; }
-        .error-msg { color: #ff4d4d; font-weight: bold; }
+        .group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; color: #aaa; font-size: 14px; }
+        input { width: 100%; padding: 12px; background: #2c2c2c; border: 1px solid #444; border-radius: 8px; color: #fff; box-sizing: border-box; }
+        button { width: 100%; padding: 15px; background: #007aff; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 10px; }
+        button:hover { background: #005bb5; }
+        #log { margin-top: 20px; padding: 12px; background: #000; color: #4af626; border-radius: 8px; font-family: monospace; font-size: 13px; height: 150px; overflow-y: auto; border: 1px solid #333; }
+        .result { margin-top: 20px; padding: 15px; background: #e3f2fd; color: #333; border-radius: 8px; display: none; }
+        .link { word-break: break-all; font-weight: bold; color: #d32f2f; background: #fff; padding: 10px; border-radius: 4px; margin: 10px 0; border: 1px dashed #007aff; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>IPA to OTA Link Generator</h2>
-
+    <h2>IPA & Plist Auto-Manager</h2>
+    
     <div class="group">
         <label>1. GitHub Token (ghp_...):</label>
-        <input type="password" id="token" placeholder="Dán Token có quyền 'repo' vào đây">
-        <button onclick="fetchReleases()" style="margin-top:10px; background:#444;">Tải danh sách Mục hiện có</button>
+        <input type="password" id="token" placeholder="Dán mã Token vào đây">
     </div>
 
     <div class="group">
-        <label>2. Chọn Mục lưu IPA (Release Tag):</label>
-        <select id="tagSelect" onchange="toggleTagInput()">
-            <option value="">-- Bấm nút trên để tải --</option>
-            <option value="NEW">+ Tạo mới Mục (Tag)...</option>
-        </select>
-        <input type="text" id="newTag" placeholder="Nhập tên Tag mới" style="display:none; margin-top:10px;">
-    </div>
-
-    <div class="group">
-        <label>3. Tên miền hiển thị link Plist:</label>
+        <label>2. Tên miền (Ví dụ: sharechungchi.com):</label>
         <input type="text" id="domain" value="sharechungchi.com">
     </div>
 
     <div class="group">
-        <label>4. Chọn file IPA & Tên Plist:</label>
+        <label>3. Chọn file IPA & Tên Plist:</label>
         <input type="file" id="ipaFile" accept=".ipa" style="margin-bottom:10px;">
-        <input type="text" id="plistName" placeholder="Tên file lưu (không cần .plist)">
+        <input type="text" id="plistName" placeholder="Tên file (ví dụ: esign123)">
     </div>
 
-    <button id="btnStart" onclick="execute()">BẮT ĐẦU QUY TRÌNH TỰ ĐỘNG</button>
+    <button id="btn" onclick="start()">BẮT ĐẦU UPLOAD 100%</button>
 
-    <div id="log">Sẵn sàng...</div>
+    <div id="log">Sẵn sàng chờ lệnh...</div>
 
-    <div id="result" class="result-area">
-        <strong>✅ THÀNH CÔNG! Link cài đặt cho iPhone:</strong>
-        <div id="itmsLink" class="link-text"></div>
-        <button onclick="copyLink()" style="background:#28a745;">Sao chép Link</button>
+    <div id="result" class="result">
+        <strong>✅ THÀNH CÔNG! Link cài đặt iPhone:</strong>
+        <div id="itms" class="link"></div>
+        <button onclick="copy()" style="background:#28a745; padding:8px; font-size:12px;">Copy Link</button>
     </div>
 </div>
 
@@ -64,144 +53,95 @@
     const OWNER = "VieCertP12";
     const REPO = "pageipa";
 
-    function log(m, isError = false) {
+    function log(m) {
         const l = document.getElementById('log');
-        const colorClass = isError ? 'class="error-msg"' : '';
-        l.innerHTML += `> <span ${colorClass}>${m}</span><br>`;
+        l.innerHTML += `> ${m}<br>`;
         l.scrollTop = l.scrollHeight;
     }
 
-    function toggleTagInput() {
-        const s = document.getElementById('tagSelect');
-        document.getElementById('newTag').style.display = (s.value === 'NEW') ? 'block' : 'none';
+    async function uploadToGithub(path, content, token, isBinary = false) {
+        let sha = "";
+        const check = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${path}`, {
+            headers: { 'Authorization': `token ${token}` }
+        });
+        if (check.ok) {
+            const data = await check.json();
+            sha = data.sha;
+        }
+
+        const body = {
+            message: `Auto upload ${path}`,
+            content: content,
+            sha: sha || undefined
+        };
+
+        const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${path}`, {
+            method: 'PUT',
+            headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        return res;
     }
 
-    async function fetchReleases() {
-        const t = document.getElementById('token').value.trim();
-        if(!t) return alert("Vui lòng nhập Token!");
-        log("Đang kết nối GitHub...");
-        try {
-            const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/releases`, {
-                headers: { 'Authorization': `token ${t}`, 'Accept': 'application/vnd.github.v3+json' }
-            });
-            if (!res.ok) throw new Error("Token không hợp lệ hoặc không có quyền.");
-            const data = await res.json();
-            const sel = document.getElementById('tagSelect');
-            sel.innerHTML = '<option value="">-- Chọn mục --</option><option value="NEW">+ Tạo mới Mục (Tag)...</option>';
-            data.forEach(r => sel.innerHTML += `<option value="${r.tag_name}">Mục: ${r.tag_name}</option>`);
-            log("Đã cập nhật danh sách Mục.");
-        } catch(e) { log("Lỗi: " + e.message, true); }
-    }
-
-    async function execute() {
+    async function start() {
         const token = document.getElementById('token').value.trim();
         const file = document.getElementById('ipaFile').files[0];
         const pName = document.getElementById('plistName').value.trim();
         const domain = document.getElementById('domain').value.trim();
-        let tag = document.getElementById('tagSelect').value;
-        if(tag === 'NEW') tag = document.getElementById('newTag').value.trim();
 
-        if(!token || !file || !tag || !pName) return alert("Thiếu thông tin!");
-
-        document.getElementById('btnStart').disabled = true;
-        document.getElementById('result').style.display = 'none';
-        log(`--- Khởi động quy trình cho: ${pName} ---`);
+        if (!token || !file || !pName) return alert("Thiếu thông tin!");
+        document.getElementById('btn').disabled = true;
 
         try {
-            // 1. Kiểm tra Release
-            log("Kiểm tra Mục (Tag)...");
-            let relRes = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/releases/tags/${tag}`, {
-                headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }
-            });
+            log(`Bắt đầu xử lý: ${file.name}`);
             
-            let relData;
-            if(relRes.status === 404) {
-                log("Đang tạo Mục mới...");
-                let createRes = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/releases`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ tag_name: tag, name: `Release ${tag}` })
-                });
-                relData = await createRes.json();
-            } else {
-                relData = await relRes.json();
-            }
-
-            // 2. Upload IPA
-            log(`Đang đẩy file ${file.name} lên GitHub...`);
-            const uploadUrl = `https://uploads.github.com/repos/${OWNER}/${REPO}/releases/${relData.id}/assets?name=${encodeURIComponent(file.name)}`;
-            
-            try {
-                const upRes = await fetch(uploadUrl, {
-                    method: 'POST',
-                    headers: { 
-                        'Authorization': `token ${token}`, 
-                        'Content-Type': 'application/octet-stream' 
-                    },
-                    body: file
-                });
-
-                if(!upRes.ok) {
-                    const err = await upRes.json();
-                    if(upRes.status === 422) throw new Error("File đã tồn tại! Hãy xóa file cũ trên GitHub hoặc đổi tên file IPA.");
-                    throw new Error(err.message || "Lỗi upload IPA.");
-                }
+            // 1. Đọc file IPA và chuyển sang Base64
+            log("Đang mã hóa file IPA...");
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = async () => {
+                const base64Ipa = reader.result.split(',')[1];
+                
+                // 2. Upload IPA vào folder 'ipas'
+                log("Đang đẩy file IPA vào thư mục 'ipas'...");
+                const ipaPath = `ipas/${file.name}`;
+                const upIpa = await uploadToGithub(ipaPath, base64Ipa, token);
+                
+                if (!upIpa.ok) throw new Error("Không thể upload IPA.");
                 log("Upload IPA thành công!");
-            } catch (fetchErr) {
-                throw new Error("Failed to fetch: Lỗi này thường do trình duyệt chặn CORS. Bạn hãy cài Extension 'Allow CORS' và bật nó lên, hoặc thử lại trên trình duyệt khác.");
-            }
-            
-            const ipaUrl = `https://github.com/${OWNER}/${REPO}/releases/download/${tag}/${encodeURIComponent(file.name)}`;
 
-            // 3. Tạo Plist
-            log("Đang tạo file Plist...");
-            const plistBody = `<?xml version="1.0" encoding="UTF-8"?>
+                // 3. Tạo Plist
+                log("Đang tạo file Plist...");
+                const ipaUrl = `https://raw.githubusercontent.com/${OWNER}/${REPO}/main/${ipaPath}`;
+                const plistContent = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0"><dict><key>items</key><array><dict><key>assets</key><array><dict><key>kind</key><string>software-package</string><key>url</key><string>${ipaUrl}</string></dict></array><key>metadata</key><dict><key>bundle-identifier</key><string>com.viecert.app</string><key>bundle-version</key><string>1.0</string><key>kind</key><string>software</string><key>title</key><string>${pName}</string></dict></dict></array></dict></plist>`;
+<plist version="1.0"><dict><key>items</key><array><dict><key>assets</key><array><dict><key>kind</key><string>software-package</string><key>url</key><string>${ipaUrl}</string></dict></array><key>metadata</key><dict><key>bundle-identifier</key><string>com.viecert.p12</string><key>bundle-version</key><string>1.0</string><key>kind</key><string>software</string><key>title</key><string>${pName}</string></dict></dict></array></dict></plist>`;
 
-            // 4. Lưu Plist vào repo
-            const path = `esignplist/${pName}.plist`;
-            log(`Đang lưu vào ${path}...`);
-            let sha = "";
-            const checkRes = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${path}`, {
-                headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }
-            });
-            if(checkRes.ok) {
-                const checkData = await checkRes.json();
-                sha = checkData.sha;
-            }
+                // 4. Lưu Plist
+                const plistPath = `esignplist/${pName}.plist`;
+                const upPlist = await uploadToGithub(plistPath, btoa(unescape(encodeURIComponent(plistContent))), token);
+                
+                if (!upPlist.ok) throw new Error("Không thể lưu Plist.");
+                log("Lưu Plist thành công!");
 
-            const commitRes = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${path}`, {
-                method: 'PUT',
-                headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    message: `Update plist: ${pName}`,
-                    content: btoa(unescape(encodeURIComponent(plistBody))),
-                    sha: sha || undefined
-                })
-            });
-
-            if(!commitRes.ok) throw new Error("Không thể lưu file Plist.");
-            log("Đã lưu Plist thành công.");
-
-            // 5. Kết quả
-            const finalPlistUrl = `https://${domain}/esignplist/${pName}.plist`;
-            const itms = `itms-services://?action=download-manifest&url=${finalPlistUrl}`;
-            
-            document.getElementById('itmsLink').innerText = itms;
-            document.getElementById('result').style.display = 'block';
-            log("--- HOÀN THÀNH 100% ---");
-
-        } catch(e) {
-            log(e.message, true);
-        } finally {
-            document.getElementById('btnStart').disabled = false;
+                // 5. Kết quả
+                const finalPlistUrl = `https://${domain}/esignplist/${pName}.plist`;
+                const itmsLink = `itms-services://?action=download-manifest&url=${finalPlistUrl}`;
+                
+                document.getElementById('itms').innerText = itmsLink;
+                document.getElementById('result').style.display = 'block';
+                log("--- HOÀN THÀNH 100% ---");
+                document.getElementById('btn').disabled = false;
+            };
+        } catch (e) {
+            log("LỖI: " + e.message);
+            document.getElementById('btn').disabled = false;
         }
     }
 
-    function copyLink() {
-        const text = document.getElementById('itmsLink').innerText;
-        navigator.clipboard.writeText(text).then(() => alert("Đã copy link cài đặt!"));
+    function copy() {
+        navigator.clipboard.writeText(document.getElementById('itms').innerText);
+        alert("Đã copy link cài đặt!");
     }
 </script>
 </body>
